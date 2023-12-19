@@ -7,7 +7,7 @@
 class HashTable {
 private:
     size_t tableSize;
-    std::vector<std::vector<std::string>> hashTable;
+    std::vector<std::string> hashTable;
 
     size_t customHash(const std::string& str) {
         const int p = 31; // Простое число p для хеширования
@@ -21,11 +21,21 @@ private:
     }
 
 public:
-    HashTable(size_t size) : tableSize(size), hashTable(size) {}
+    HashTable(size_t size) : tableSize(size), hashTable(size, "") {}
 
-    void insert(const std::string& word) {
+    bool insert(const std::string& word) {
         size_t hashValue = customHash(word);
-        hashTable[hashValue].push_back(word);
+        size_t initialIndex = hashValue;
+
+        do {
+            if (hashTable[hashValue] == "") {
+                hashTable[hashValue] = word;
+                return true;
+            }
+            hashValue = (hashValue + 1) % tableSize;
+        } while (hashValue != initialIndex);
+
+        return false; // Нет свободных ячеек для вставки
     }
 
     void writeToFile(const std::string& filename) {
@@ -37,12 +47,8 @@ public:
         }
 
         for (size_t i = 0; i < tableSize; ++i) {
-            if (!hashTable[i].empty()) {
-                outputFile << "Хеш " << i << ": ";
-                for (const auto& word : hashTable[i]) {
-                    outputFile << word << " ";
-                }
-                outputFile << std::endl;
+            if (hashTable[i] != "") {
+                outputFile << "Хеш " << i << ": " << hashTable[i] << std::endl;
             }
         }
 
@@ -55,9 +61,9 @@ int main() {
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 
-    const size_t tableSize = 100; // Размер хеш-таблицы (можно изменить)
+    const size_t tableSize = 1000; // Размер хеш-таблицы
 
-    std::ifstream inputFile("input.txt");
+    std::ifstream inputFile("input.txt"); // Замените "input.txt" на имя вашего файла с текстом
 
     if (!inputFile.is_open()) {
         std::cout << "Не удалось открыть входной файл.\n";
@@ -73,7 +79,7 @@ int main() {
 
     inputFile.close();
 
-    hashTable.writeToFile("output.txt");
+    hashTable.writeToFile("output.txt"); // Имя файла для записи хеш-таблицы
 
     return 0;
 }
